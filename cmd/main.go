@@ -4,12 +4,11 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
 
 	"github.com/SardorMS/http/pkg/server"
 )
 
-const lineBreaker string = "\r\n"
+
 
 func main() {
 	host := "0.0.0.0"
@@ -27,7 +26,7 @@ func execute(host string, port string) (err error) {
 	srv.Register("/", func(conn net.Conn) {
 		body := "Welcome to our web-site"
 
-		_, err = conn.Write([]byte(Responce(body)))
+		_, err = conn.Write([]byte(srv.Response(body)))
 		if err != nil {
 			log.Print(err)
 			return
@@ -37,7 +36,7 @@ func execute(host string, port string) (err error) {
 	srv.Register("/about", func(conn net.Conn) {
 		body := "About Golang Academy"
 
-		_, err = conn.Write([]byte(Responce(body)))
+		_, err = conn.Write([]byte(srv.Response(body)))
 		if err != nil {
 			log.Print(err)
 			return
@@ -46,14 +45,7 @@ func execute(host string, port string) (err error) {
 	return srv.Start()
 }
 
-func Responce(body string) string {
-	return "HTTP/1.1 200 OK\r\n" +
-		"Content-Lenght: " + strconv.Itoa(len(body)) + lineBreaker +
-		"Content-Type: text/html\r\n" +
-		"Connection: close\r\n" +
-		lineBreaker +
-		string(body)
-}
+
 
 
 /*
