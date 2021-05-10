@@ -64,45 +64,45 @@ func (s *Server) handle(conn net.Conn) {
 	}()
 
 	buf := make([]byte, 4096)
-	for {
-		n, err := conn.Read(buf)
-		if err == io.EOF {
-			log.Printf("Error EOF: %s", buf[:n])
-			return
-		}
-		if err != nil {
-			log.Println("Error not nil after reading", err)
-			return
-		}
 
-		//Parsing...
-		data := buf[:n]
-		requestLineDelim := []byte{'\r', '\n'}
-		requestLineEnd := bytes.Index(data, requestLineDelim)
-
-		if requestLineEnd == -1 {
-			log.Print("requestLineEndErr: ", requestLineEnd)
-			return
-		}
-
-		requestLine := string(data[:requestLineEnd])
-		parts := strings.Split(requestLine, " ")
-		if len(parts) != 3 {
-			log.Print("Parts: ", parts)
-			return
-		}
-
-		method, path := parts[0], parts[1]
-
-		if method != "GET" {
-			log.Print("Method Not GET: ", method)
-			return
-		}
-
-		s.mu.RLock()
-		if handler, ok := s.handlers[path]; ok {
-			s.mu.RUnlock()
-			handler(conn)
-		}
+	n, err := conn.Read(buf)
+	if err == io.EOF {
+		log.Printf("Error EOF: %s", buf[:n])
+		return
 	}
+	if err != nil {
+		log.Println("Error not nil after reading", err)
+		return
+	}
+
+	//Parsing...
+	data := buf[:n]
+	requestLineDelim := []byte{'\r', '\n'}
+	requestLineEnd := bytes.Index(data, requestLineDelim)
+
+	if requestLineEnd == -1 {
+		log.Print("requestLineEndErr: ", requestLineEnd)
+		return
+	}
+
+	requestLine := string(data[:requestLineEnd])
+	parts := strings.Split(requestLine, " ")
+	if len(parts) != 3 {
+		log.Print("Parts: ", parts)
+		return
+	}
+
+	method, path := parts[0], parts[1]
+
+	if method != "GET" {
+		log.Print("Method Not GET: ", method)
+		return
+	}
+
+	s.mu.RLock()
+	if handler, ok := s.handlers[path]; ok {
+		s.mu.RUnlock()
+		handler(conn)
+	}
+
 }
