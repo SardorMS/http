@@ -98,17 +98,17 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	method, path, version := parts[0], parts[1], parts[2]
+	path, version := parts[1], parts[2]
 
 	if version != "HTTP/1.1" {
 		log.Print("Version Not HTTP/1.1: ", version)
 		return
 	}
 
-	if method != "GET" {
-		log.Print("Method Not GET: ", method)
-		return
-	}
+	// if method != "GET" {
+	// 	log.Print("Method Not GET: ", method)
+	// 	return
+	// }
 
 	s.mu.RLock()
 	if handler, ok := s.handlers[path]; ok {
