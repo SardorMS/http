@@ -23,7 +23,26 @@ func main() {
 func execute(host string, port string) (err error) {
 	srv := server.NewServer(net.JoinHostPort(host, port))
 
-	srv.Register("/", func(conn net.Conn) {
+	srv.Register("/payments", func(req *server.Request) {
+		id := req.QueryParams["id"]
+		log.Print(id)
+		
+		body := "Welcome to our web-site"
+		_, err = req.Conn.Write([]byte(srv.Response(body)))
+		if err != nil {
+			log.Print(err)
+			return
+		}
+	})
+
+	return srv.Start()
+}
+
+
+
+
+/*
+srv.Register("/", func(conn net.Conn) {
 		body := "Welcome to our web-site"
 
 		_, err = conn.Write([]byte(srv.Response(body)))
@@ -42,8 +61,7 @@ func execute(host string, port string) (err error) {
 			return
 		}
 	})
-	return srv.Start()
-}
+*/
 
 
 
