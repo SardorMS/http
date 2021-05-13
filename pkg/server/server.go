@@ -28,7 +28,7 @@ type Server struct {
 type Request struct {
 	Conn        net.Conn
 	QueryParams url.Values
-	// PathParams  map[string]string
+	PathParams  map[string]string
 }
 
 //NewServer - create server method.
@@ -69,6 +69,7 @@ func (s *Server) Start() error {
 			log.Print(err)
 			continue
 		}
+		//don't forget to get go func()
 		s.handle(conn)
 	}
 }
@@ -117,7 +118,14 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	uri, err := url.ParseRequestURI(path)
+	decoded, err := url.PathUnescape(path)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	log.Println(decoded)
+
+	uri, err := url.ParseRequestURI(decoded)
 	if err != nil {
 		log.Print(err)
 		return
@@ -125,14 +133,81 @@ func (s *Server) handle(conn net.Conn) {
 	log.Print(uri.Path)
 	log.Print(uri.Query())
 
-	s.mu.RLock()
-	if handler, ok := s.handlers[uri.Path]; ok {
-		s.mu.RUnlock()
-		handler(&Request{
-			Conn:        conn,
-			QueryParams: uri.Query(),
-		})
+	var req Request
+	req.Conn = conn
+	req.QueryParams = uri.Query()
+
+	handler := func(req *Request) {
+		req.Conn.Close()
 	}
+	s.mu.RLock()
+	pathPar, ok := s.checkPath(uri.Path)
+	if ok != nil {
+		req.PathParams = pathPar
+		handler = ok
+	}
+	s.mu.RUnlock()
+	handler(&req)
+
+	// s.mu.RLock()
+	// if handler, ok := s.handlers[uri.Path]; ok {
+	// 	s.mu.RUnlock()
+	// 	handler(&Request{
+	// 		Conn:        conn,
+	// 		QueryParams: uri.Query(),
+	// 	})
+	// }
+}
+
+func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
+
+	strRoutes := make([]string, len(s.handlers))
+	i := 0
+	for k := range s.handlers {
+		strRoutes[i] = k
+		i++
+	}
+
+	mp := make(map[string]string)
+
+	for i := 0; i < len(strRoutes); i++ {
+		flag := false
+		route := strRoutes[i]
+		partsRoute := strings.Split(route, "/")
+		pRotes := strings.Split(path, "/")
+
+		for j, v := range partsRoute {
+			if v != "" {
+				f := v[0:1]
+				l := v[len(v)-1:]
+				if f == "{" && l == "}" {
+					mp[v[1:len(v)-1]] = pRotes[j]
+					flag = true
+				} else if pRotes[j] != v {
+
+					strs := strings.Split(v, "{")
+					if len(strs) > 0 {
+						key := strs[1][:len(strs[1])-1]
+						mp[key] = pRotes[j][len(strs[0]):]
+						flag = true
+					} else {
+						flag = false
+						break
+					}
+				}
+				flag = true
+			}
+		}
+		if flag {
+			if hr, found := s.handlers[route]; found {
+				return mp, hr
+			}
+			break
+		}
+	}
+
+	return nil, nil
+
 }
 
 //Responce - response to request.
