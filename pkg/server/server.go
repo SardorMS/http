@@ -28,7 +28,7 @@ type Server struct {
 type Request struct {
 	Conn        net.Conn
 	QueryParams url.Values
-	// PathParams  map[string]string
+	PathParams  map[string]string
 }
 
 //NewServer - create server method.
@@ -69,6 +69,7 @@ func (s *Server) Start() error {
 			log.Print(err)
 			continue
 		}
+		//don't forget to paste go func()
 		s.handle(conn)
 	}
 }
@@ -117,7 +118,14 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	uri, err := url.ParseRequestURI(path)
+	decoded, err := url.PathUnescape(path)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	log.Println(decoded)
+
+	uri, err := url.ParseRequestURI(decoded)
 	if err != nil {
 		log.Print(err)
 		return
@@ -125,14 +133,73 @@ func (s *Server) handle(conn net.Conn) {
 	log.Print(uri.Path)
 	log.Print(uri.Query())
 
-	s.mu.RLock()
-	if handler, ok := s.handlers[uri.Path]; ok {
-		s.mu.RUnlock()
-		handler(&Request{
-			Conn:        conn,
-			QueryParams: uri.Query(),
-		})
+	var req Request
+	req.Conn = conn
+	req.QueryParams = uri.Query()
+
+	handler := func(req *Request) {
+		req.Conn.Close()
 	}
+	s.mu.RLock()
+	pathPar, ok := s.findPath(uri.Path)
+	if ok != nil {
+		req.PathParams = pathPar
+		handler = ok
+	}
+	s.mu.RUnlock()
+	handler(&req)
+}
+
+//findPath - ...
+func (s *Server) findPath(path string) (map[string]string, HandlerFunc) {
+
+	registRoutes := make([]string, len(s.handlers))
+	i := 0
+	for k := range s.handlers {
+		registRoutes[i] = k
+		i++
+	}
+
+	paramMap := make(map[string]string)
+
+	for i := 0; i < len(registRoutes); i++ {
+		flag := false
+		eachRegistRoutes := registRoutes[i]
+		partsOfRegistRoutes := strings.Split(eachRegistRoutes, "/")
+		partsOfClientRoutes := strings.Split(path, "/")
+
+		for j, v := range partsOfRegistRoutes {
+			if v != "" {
+				f := v[0:1]
+				l := v[len(v)-1:]
+				if f == "{" && l == "}" {
+					paramMap[v[1:len(v)-1]] = partsOfClientRoutes[j] //id = "number"
+					flag = true
+				} else if partsOfClientRoutes[j] != v {
+
+					strs := strings.Split(v, "{")
+					if len(strs) > 0 {
+						key := strs[1][:len(strs[1])-1]
+						paramMap[key] = partsOfClientRoutes[j][len(strs[0]):]
+						flag = true
+					} else {
+						flag = false
+						break
+					}
+				}
+				flag = true
+			}
+		}
+		if flag {
+			if function, status := s.handlers[eachRegistRoutes]; status {
+				return paramMap, function
+			}
+			break
+		}
+	}
+
+	return nil, nil
+
 }
 
 //Responce - response to request.
