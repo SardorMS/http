@@ -70,7 +70,7 @@ func (s *Server) Start() error {
 			continue
 		}
 		//don't forget to paste go func()
-		s.handle(conn)
+		go s.handle(conn)
 	}
 }
 
