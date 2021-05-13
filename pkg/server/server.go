@@ -69,8 +69,7 @@ func (s *Server) Start() error {
 			log.Print(err)
 			continue
 		}
-		//don't forget to paste go func()
-		s.handle(conn)
+		go s.handle(conn)
 	}
 }
 
