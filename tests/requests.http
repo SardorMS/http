@@ -1,5 +1,5 @@
 ###
 
-GET http://127.0.0.1:9999/categories/1 HTTP/1.1
+GET http://127.0.0.1:9999/categories2/1 HTTP/1.1
 
 # /payments/{id}/package/{id}
