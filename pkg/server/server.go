@@ -69,7 +69,7 @@ func (s *Server) Start() error {
 			log.Print(err)
 			continue
 		}
-		//don't forget to get go func()
+		//don't forget to paste go func()
 		s.handle(conn)
 	}
 }
@@ -141,54 +141,46 @@ func (s *Server) handle(conn net.Conn) {
 		req.Conn.Close()
 	}
 	s.mu.RLock()
-	pathPar, ok := s.checkPath(uri.Path)
+	pathPar, ok := s.findPath(uri.Path)
 	if ok != nil {
 		req.PathParams = pathPar
 		handler = ok
 	}
 	s.mu.RUnlock()
 	handler(&req)
-
-	// s.mu.RLock()
-	// if handler, ok := s.handlers[uri.Path]; ok {
-	// 	s.mu.RUnlock()
-	// 	handler(&Request{
-	// 		Conn:        conn,
-	// 		QueryParams: uri.Query(),
-	// 	})
-	// }
 }
 
-func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
+//findPath - ...
+func (s *Server) findPath(path string) (map[string]string, HandlerFunc) {
 
-	strRoutes := make([]string, len(s.handlers))
+	registRoutes := make([]string, len(s.handlers))
 	i := 0
 	for k := range s.handlers {
-		strRoutes[i] = k
+		registRoutes[i] = k
 		i++
 	}
 
-	mp := make(map[string]string)
+	paramMap := make(map[string]string)
 
-	for i := 0; i < len(strRoutes); i++ {
+	for i := 0; i < len(registRoutes); i++ {
 		flag := false
-		route := strRoutes[i]
-		partsRoute := strings.Split(route, "/")
-		pRotes := strings.Split(path, "/")
+		eachRegistRoutes := registRoutes[i]
+		partsOfRegistRoutes := strings.Split(eachRegistRoutes, "/")
+		partsOfClientRoutes := strings.Split(path, "/")
 
-		for j, v := range partsRoute {
+		for j, v := range partsOfRegistRoutes {
 			if v != "" {
 				f := v[0:1]
 				l := v[len(v)-1:]
 				if f == "{" && l == "}" {
-					mp[v[1:len(v)-1]] = pRotes[j]
+					paramMap[v[1:len(v)-1]] = partsOfClientRoutes[j] //id = "number"
 					flag = true
-				} else if pRotes[j] != v {
+				} else if partsOfClientRoutes[j] != v {
 
 					strs := strings.Split(v, "{")
 					if len(strs) > 0 {
 						key := strs[1][:len(strs[1])-1]
-						mp[key] = pRotes[j][len(strs[0]):]
+						paramMap[key] = partsOfClientRoutes[j][len(strs[0]):]
 						flag = true
 					} else {
 						flag = false
@@ -199,8 +191,8 @@ func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
 			}
 		}
 		if flag {
-			if hr, found := s.handlers[route]; found {
-				return mp, hr
+			if function, status := s.handlers[eachRegistRoutes]; status {
+				return paramMap, function
 			}
 			break
 		}
