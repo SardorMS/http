@@ -69,7 +69,7 @@ func (s *Server) Start() error {
 			log.Print(err)
 			continue
 		}
-		s.handle(conn)
+		go s.handle(conn)
 	}
 }
 
