@@ -29,6 +29,7 @@ type Request struct {
 	Conn        net.Conn
 	QueryParams url.Values
 	PathParams  map[string]string
+	Headers     map[string]string
 }
 
 //NewServer - create server method.
@@ -82,6 +83,7 @@ func (s *Server) handle(conn net.Conn) {
 		}
 	}()
 
+	var req Request
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
 	if err == io.EOF {
@@ -93,19 +95,41 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	//Parsing...
+	//Parsing request line
 	data := buf[:n]
-
-	requestLineDelim := []byte{'\r', '\n'}
-	requestLineEnd := bytes.Index(data, requestLineDelim)
-
-	if requestLineEnd == -1 {
-		log.Print("requestLineEndErr: ", requestLineEnd)
+	requestDelimetr := []byte{'\r', '\n'}
+	requestLine := bytes.Index(data, requestDelimetr)
+	if requestLine == -1 {
+		log.Print("requestLineErr: ", requestLine)
 		return
 	}
 
-	requestLine := string(data[:requestLineEnd])
-	parts := strings.Split(requestLine, " ")
+	//Parsing header line
+	headerDelimetr := []byte{'\r', '\n', '\r', '\n'}
+	headerLine := bytes.Index(data, headerDelimetr)
+	if headerLine == -1 {
+		log.Print("headerLineEnd: ", headerLine)
+		return
+	}
+
+	headersLine := string(data[requestLine:headerLine])
+	// Use - header := strings.Split(headerLine, "\r\n")[1:]
+	// [1:] == [1:len(headerLine)]
+	// header will be without "", key of the header will start with one.
+	header := strings.Split(headersLine, "\r\n")
+
+	paramMap := make(map[string]string)
+	for _, v := range header {
+		if v != "" {
+			eachHeaderLine := strings.Split(v, ": ")
+			paramMap[eachHeaderLine[0]] = eachHeaderLine[1]
+		}
+	}
+	req.Headers = paramMap
+
+	//Continuing to parsing the request lines
+	request := string(data[:requestLine])
+	parts := strings.Split(request, " ")
 	if len(parts) != 3 {
 		log.Print("Parts: ", parts)
 		return
@@ -132,7 +156,6 @@ func (s *Server) handle(conn net.Conn) {
 	log.Print(uri.Path)
 	log.Print(uri.Query())
 
-	var req Request
 	req.Conn = conn
 	req.QueryParams = uri.Query()
 
@@ -178,7 +201,10 @@ func (s *Server) findPath(path string) (map[string]string, HandlerFunc) {
 
 					strs := strings.Split(v, "{")
 					if len(strs) > 0 {
-						key := strs[1][:len(strs[1])-1]
+						key := strs[1][:len(strs[1])-1] // key = "id}"->"id"
+						//Here could be error output, if client route won't match with registred route.
+						//Example: [clientRoute][registredRoute]
+						//[categories2][category] -> "es2" and the value will - param[id] = es2
 						paramMap[key] = partsOfClientRoutes[j][len(strs[0]):]
 						flag = true
 					} else {
