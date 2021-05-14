@@ -30,6 +30,7 @@ type Request struct {
 	QueryParams url.Values
 	PathParams  map[string]string
 	Headers     map[string]string
+	Body        []byte
 }
 
 //NewServer - create server method.
@@ -126,6 +127,11 @@ func (s *Server) handle(conn net.Conn) {
 		}
 	}
 	req.Headers = paramMap
+
+	//Parsing body line
+	body := string(data[headerLine:])
+	bodyLine := strings.Trim(body, "\r\n")
+	req.Body = []byte(bodyLine)
 
 	//Continuing to parsing the request lines
 	request := string(data[:requestLine])
