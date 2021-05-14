@@ -36,12 +36,12 @@ func execute(host string, port string) (err error) {
 	// })
 
 
-	srv.Register("/category/{id1}", func(req *server.Request) {
+	srv.Register("/category{id1}/{id2}", func(req *server.Request) {
 		id1 := req.PathParams["id1"]
 		log.Print(id1)
 		
-		// id2 := req.PathParams["id2"]
-		// log.Print(id2)
+		id2 := req.PathParams["id2"]
+		log.Print(id2)
 
 		body := "About Golang Academy"
 		_, err = req.Conn.Write([]byte(srv.Response(body)))
