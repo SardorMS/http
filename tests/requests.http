@@ -2,6 +2,11 @@
 
 GET http://127.0.0.1:9999/category7/1?query=hi HTTP/1.1
 
+{
+    "Hello Everybody. My name is Man."
+    "And now we start."
+}
+
 # /payments/{id}/package/{id}
 
 
