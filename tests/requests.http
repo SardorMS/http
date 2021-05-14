@@ -1,5 +1,15 @@
 ###
 
-GET http://127.0.0.1:9999/categories2/1 HTTP/1.1
+GET http://127.0.0.1:9999/category7/1?query=hi HTTP/1.1
 
 # /payments/{id}/package/{id}
+
+
+
+#"GET category/2/1 HTTP/1.1\r\n"\r\n
+#"user-agent: vscode-restclient\r\n"\r\n
+#"Connection: close\r\n"\r\n
+
+
+
+
