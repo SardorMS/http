@@ -1,5 +1,5 @@
 # http
-Simple bacic net/http module.
+Simple baыic net/http module.
 Мanual implementation of the handler.
 # Installation
 
