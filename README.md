@@ -1,5 +1,5 @@
 # http
-Simple baыic net/http module.
+Simple basic net/http module.
 Мanual implementation of the handler.
 # Installation
 
