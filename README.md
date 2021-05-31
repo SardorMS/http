@@ -1,6 +1,6 @@
 # http
-Simple bacic http/net module.
-
+Simple bacic net/http module.
+Мanual implementation of the handler.
 # Installation
 
 1. Use this module:
