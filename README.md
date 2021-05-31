@@ -3,9 +3,9 @@ Simple basic net/http module.
 Мanual implementation of the handler.
 # Installation
 
-1. Use this module:
+1. To get this module into your go.mod file use:
  ```
- go mod github.com/SardorMS/http
+ go get github.com/SardorMS/http
  ```
  
 2. To RUN the server use:
